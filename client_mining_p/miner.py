@@ -15,8 +15,10 @@ def proof_of_work(block):
     """
     block_string = json.dumps(block, sort_keys=True)
     proof = 0
+    print("Starting Proof of Work...")
     while valid_proof(block_string, proof) is False:
         proof += 1
+    print("Value has been found!")
     return proof
 
 
@@ -73,4 +75,9 @@ if __name__ == '__main__':
         # TODO: If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        pass
+        coins = 0
+        if data["message"] == "New Block Forged":
+            coins+=1
+            print("Current Coins:", coins)
+        else:
+            print("Error:", data["message"])
