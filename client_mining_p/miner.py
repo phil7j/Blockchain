@@ -1,6 +1,6 @@
 import hashlib
 import requests
-
+import time
 import sys
 import json
 
@@ -15,10 +15,15 @@ def proof_of_work(block):
     """
     block_string = json.dumps(block, sort_keys=True)
     proof = 0
+# run your code
+
     print("Starting Proof of Work...")
+    start = time.time()
     while valid_proof(block_string, proof) is False:
         proof += 1
-    print("Value has been found!")
+    end = time.time()
+    elapsed = end - start
+    print(f"Value has been found!, it took this long: {elapsed}")
     return proof
 
 
