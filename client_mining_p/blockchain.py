@@ -78,21 +78,21 @@ class Blockchain(object):
     #     while self.valid_proof(block_string, proof) is False:
     #         proof += 1
     #     return proof
-    # @staticmethod
-    # def valid_proof(block_string, proof):
-    #     """
-    #     Validates the Proof:  Does hash(block_string, proof) contain 3
-    #     leading zeroes?  Return true if the proof is valid
-    #     :param block_string: <string> The stringified block to use to
-    #     check in combination with `proof`
-    #     :param proof: <int?> The value that when combined with the
-    #     stringified previous block results in a hash that has the
-    #     correct number of leading zeroes.
-    #     :return: True if the resulting hash is a valid proof, False otherwise
-    #     """
-    #     guess = f'{block_string}{proof}'.encode()
-    #     guess_hash = hashlib.sha256(guess).hexdigest()
-    #     return guess_hash[:6] == "0" * 6
+    @staticmethod
+    def valid_proof(block_string, proof):
+        """
+        Validates the Proof:  Does hash(block_string, proof) contain 3
+        leading zeroes?  Return true if the proof is valid
+        :param block_string: <string> The stringified block to use to
+        check in combination with `proof`
+        :param proof: <int?> The value that when combined with the
+        stringified previous block results in a hash that has the
+        correct number of leading zeroes.
+        :return: True if the resulting hash is a valid proof, False otherwise
+        """
+        guess = f'{block_string}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        return guess_hash[:6] == "0" * 6
 # Instantiate our Node
 app = Flask(__name__)
 # Generate a globally unique address for this node
@@ -101,6 +101,7 @@ node_identifier = str(uuid4()).replace('-', '')
 blockchain = Blockchain()
 @app.route('/mine', methods=['POST'])
 def mine():
+    # Check if id and proof are present
     try:
         data = json.loads(request.data)
         check_if_present = (data['proof'], data['id'])
@@ -111,24 +112,32 @@ def mine():
         }
         return jsonify(response), 400
 
-    # print("Here is the data from my post request!", data)
-    # print("data.proof", data["proof"])
-    # print("data.id", data["id"])
+
     # Run the proof of work algorithm to get the next proof
-    proof = data["proof"]
-    # # Forge the new Block by adding it to the chain with the proof
-    try:
-        previous_hash = blockchain.hash(blockchain.last_block)
-        new_block = blockchain.new_block(proof, previous_hash)
-        response = {
-            "message": "New Block Forged"
+    new_proof = data["proof"]
+
+    last_block = blockchain.last_block
+    last_block_string = json.dumps(last_block, sort_keys=True)
+    # If proof is valid, the add new block otherwise return error
+    if blockchain.valid_proof(last_block_string, new_proof):
+    # Forge the new Block by adding it to the chain with the proof
+        try:
+            previous_hash = blockchain.hash(blockchain.last_block)
+            new_block = blockchain.new_block(new_proof, previous_hash)
+            response = {
+                "message": "New Block Forged"
+                }
+            return jsonify(response), 200
+        except:
+            response = {
+                "message": "An Error Occured when Adding new Block"
             }
-        return jsonify(response), 200
-    except:
+            return jsonify(response), 500
+    else:
         response = {
-            "message": "An Error Occured"
+            'message': "Proof invalid or already submited"
         }
-        return jsonify(response), 400
+        return jsonify(response), 500
 @app.route('/chain', methods=['GET'])
 def full_chain():
     response = {
